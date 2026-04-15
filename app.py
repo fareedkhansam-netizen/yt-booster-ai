@@ -1,6 +1,6 @@
 import streamlit as st
 import google.generativeai as genai
-import youtube_transcript_api
+from youtube_transcript_api import YouTubeTranscriptApi
 
 st.set_page_config(page_title="Gemini Video Booster", page_icon="📈")
 st.title("🚀 YouTube Video & CTR Booster")
@@ -13,42 +13,31 @@ if api_key:
     model = genai.GenerativeModel('gemini-1.5-flash')
     
     video_url = st.text_input("YouTube Video Link Paste Karein:")
-    current_title = st.text_input("Current Title (Optional):")
-    ctr_level = st.selectbox("Current CTR Level:", ("Low", "Medium", "High"))
 
     if video_url and st.button("Analyze & Redesign"):
         try:
-            # Video ID Extract logic
+            # Video ID extraction
             if "v=" in video_url:
-                video_id = video_url.split("v=")[1].split("&")[0]
+                v_id = video_url.split("v=")[1].split("&")[0]
             elif "be/" in video_url:
-                video_id = video_url.split("be/")[1].split("?")[0]
+                v_id = video_url.split("be/")[1].split("?")[0]
             else:
-                video_id = video_url
+                v_id = video_url
 
-            with st.spinner('AI analysis kar raha hai...'):
-                # Sahi tareeqa function call karne ka
-                transcript_data = youtube_transcript_api.YouTubeTranscriptApi.get_transcript(video_id)
-                transcript = " ".join([i['text'] for i in transcript_data])
+            with st.spinner('AI data nikal raha hai...'):
+                # Is tareeqay se error nahi ayega
+                transcript_list = YouTubeTranscriptApi.list_transcripts(v_id)
+                transcript_obj = transcript_list.find_transcript(['en', 'hi', 'ur'])
+                final_transcript = " ".join([t['text'] for t in transcript_obj.fetch()])
 
-                prompt = f"""
-                You are a YouTube viral growth expert. 
-                Transcript: {transcript[:7000]}
-                Current Title: {current_title}
-                Current CTR: {ctr_level}
-                
-                Please provide:
-                1. A brief summary of the video.
-                2. 5 high-CTR, viral-style titles.
-                3. A detailed thumbnail redesign plan (focusing on visual hooks and high-contrast elements).
-                """
+                prompt = f"Analyze this YouTube transcript and suggest 5 viral titles and a thumbnail strategy: {final_transcript[:7000]}"
                 
                 response = model.generate_content(prompt)
-                st.subheader("✅ Analysis Results:")
+                st.subheader("✅ Suggestions:")
                 st.write(response.text)
                 
         except Exception as e:
-            st.error(f"Error Message: {str(e)}")
-            st.info("Check karein ke video public hai aur uske captions (Subtitles) ON hain.")
+            st.error(f"Error: {str(e)}")
+            st.info("Tip: Agar transcript ka error hai, to aisi video try karein jis mein subtitles hon.")
 else:
-    st.warning("Pehle Sidebar mein Gemini API Key enter karein.")
+    st.warning("Sidebar mein API key dalein.")
