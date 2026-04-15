@@ -1,11 +1,10 @@
 import streamlit as st
 import google.generativeai as genai
-from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api import YouTubeTranscriptApi as yta
 
 st.set_page_config(page_title="Gemini Video Booster", page_icon="📈")
 st.title("🚀 YouTube Video & CTR Booster")
 
-# Sidebar for API Key
 api_key = st.sidebar.text_input("Enter Gemini API Key:", type="password")
 
 if api_key:
@@ -18,39 +17,36 @@ if api_key:
 
     if video_url and st.button("Analyze & Redesign"):
         try:
-            # Video ID nikalne ka behtar tareeqa
+            # Video ID nikalne ka sahi tareeqa
             if "v=" in video_url:
                 video_id = video_url.split("v=")[1].split("&")[0]
             elif "be/" in video_url:
-                video_id = video_url.split("be/")[1].split("?")[0]
+                video_id = video_url.split("be/")[1]
             else:
                 video_id = video_url
 
-            with st.spinner('AI Video ko parh raha hai...'):
-                # Sahi function call: YouTubeTranscriptApi.get_transcript(video_id)
-                transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
-                transcript = " ".join([i['text'] for i in transcript_list])
+            with st.spinner('AI analysis kar raha hai...'):
+                # Error Fix: Direct class method call
+                data = yta.get_transcript(video_id)
+                transcript = " ".join([i['text'] for i in data])
 
-                # Gemini Analysis Prompt
                 prompt = f"""
-                Role: Expert YouTube Content Strategist.
-                Video Context: {current_title if current_title else "YouTube Video"}
+                App aik viral video expert hain. Is video ka transcript parhein: {transcript[:7000]}
+                Current Title: {current_title}
                 Current CTR: {ctr_level}
                 
-                Transcript: {transcript[:8000]}
-                
-                Task:
-                1. Video ki short summary dein.
-                2. 5 aise Titles likhein jinka CTR 10% se zyada ho.
-                3. Thumbnail redesign ka plan batayein (Colors, Text, aur Visuals).
+                Mujhe ye batayein:
+                1. Video ki Summary.
+                2. 5 Viral Titles (High CTR).
+                3. Thumbnail redesign ka mukammal mashwara.
                 """
                 
                 response = model.generate_content(prompt)
-                st.subheader("✅ Analysis & Recommendations:")
+                st.subheader("✅ Gemini Results:")
                 st.write(response.text)
                 
         except Exception as e:
-            st.error(f"Error: {e}")
-            st.info("Tip: Check karein ke video ke Captions/Subtitles on hain ya nahi.")
+            st.error(f"Galti: {e}")
+            st.info("Subtitles check karein ke video mein on hain ya nahi.")
 else:
-    st.warning("Please enter Gemini API Key in sidebar to start.")
+    st.warning("Sidebar mein API Key dalein.")
